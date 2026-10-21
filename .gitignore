@@ -1,0 +1,27 @@
+# Dependencies and generated builds
+**/node_modules/
+**/.venv/
+**/dist/
+
+# Local secrets/config. Keep only the safe example templates.
+**/.env
+**/.env.*
+!**/.env.example
+
+# Per-job media, generated data, and local databases
+backend/storage/uploads/*
+!backend/storage/uploads/.gitkeep
+backend/storage/outputs/*
+!backend/storage/outputs/.gitkeep
+backend/storage/mongo-data/
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+*.sqlite-*
+*.sqlite3-*
+
+# OS/editor noise and logs
+.DS_Store
+**/.DS_Store
+*.log
