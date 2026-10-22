@@ -1,4 +1,4 @@
 faster-whisper==1.1.0
 requests>=2.31.0
 numpy>=1.26
-argostranslate>=1.9.6
+deep-translator>=1.11.4

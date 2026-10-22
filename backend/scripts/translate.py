@@ -1,6 +1,6 @@
 import sys
 
-import argostranslate.translate
+from deep_translator import GoogleTranslator
 
 
 def main():
@@ -10,23 +10,15 @@ def main():
         sys.stdout.write(text)
         return
 
-    installed_languages = argostranslate.translate.get_installed_languages()
-    source_language = next((lang for lang in installed_languages if lang.code == source), None)
-    target_language = next((lang for lang in installed_languages if lang.code == "vi"), None)
-    if source_language is None or target_language is None:
-        raise RuntimeError(
-            f"Chưa cài mô hình Argos {source}->vi. Cài gói ngôn ngữ Argos cho {source} và vi trước."
-        )
-
-    translation = source_language.get_translation(target_language)
-    if translation is None:
-        raise RuntimeError(f"Không tìm thấy mô hình Argos dịch {source}->vi")
-    sys.stdout.write(translation.translate(text))
+    translated = GoogleTranslator(source=source, target="vi").translate(text)
+    if not translated:
+        raise RuntimeError("Google Translate trả về nội dung trống")
+    sys.stdout.write(translated)
 
 
 if __name__ == "__main__":
     try:
         main()
     except Exception as error:
-        print(str(error), file=sys.stderr)
+        print(f"Lỗi dịch bằng Google Translate: {error}", file=sys.stderr)
         sys.exit(1)

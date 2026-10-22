@@ -110,11 +110,10 @@ bình thường vì không phụ thuộc Resona.
   nhiều job cùng lúc) — muốn nhanh hơn thì tách thành một Python service chạy thường trực.
 - Cắt video dùng `-c copy` (không re-encode) nên ranh giới đoạn có thể lệch vài trăm ms
   theo keyframe gần nhất, không chính xác tuyệt đối 4:00.
-- Mỗi đoạn được Whisper tự nhận diện ngôn ngữ; phụ đề/ngữ liệu voice tự dịch sang tiếng Việt
-  nếu ngôn ngữ nguồn không phải tiếng Việt (có thể cấu hình `TRANSLATION_URL` và
-  `TRANSLATION_API_KEY` cho dịch vụ tương thích LibreTranslate). Nếu dịch vụ không khả dụng,
-  đoạn sẽ báo lỗi dịch và không chuyển văn bản gốc sang bước tạo voice. SRT toàn video cộng
-  timestamp theo vị trí đoạn.
+- Mỗi đoạn được Whisper tự nhận diện ngôn ngữ; phụ đề/ngữ liệu voice được dịch sang tiếng Việt
+  bằng `deep-translator` (Google Translate) nếu ngôn ngữ nguồn không phải tiếng Việt. Cài thư viện
+  bằng `pip install -r backend/requirements.txt`. Dịch cần Internet và có thể bị giới hạn bởi
+  Google Translate. SRT toàn video cộng timestamp theo vị trí đoạn.
 - Resona request timeout mặc định là 120 giây (`RESONA_REQUEST_TIMEOUT_MS` trong `backend/.env`),
   để các lần gửi văn bản dài không bị ngắt ở mốc 30 giây.
 - Ghép video: nhạc nền gốc được giữ lại ở volume thấp (25%) làm nền, giọng mới làm chủ đạo;
