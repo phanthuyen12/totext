@@ -5,7 +5,7 @@ import { config } from "../config/env.js";
 
 const scriptPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../scripts/translate.py");
 
-/** Translate a segment's cues in one process, paced to avoid Google rate limits. */
+/** Translate a segment's subtitle cues in one local Argos Translate process. */
 export async function translateTextsToVietnamese(texts, sourceLanguage) {
   const source = String(sourceLanguage || "").split(/[-_]/)[0].toLowerCase();
   if (!source || source === "vi") return texts;

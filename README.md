@@ -56,6 +56,8 @@ cp .env.example .env    # rồi điền RESONA_API_KEY khi có
 # venv riêng cho faster-whisper
 python3 -m venv .venv
 ./.venv/bin/pip install -r requirements.txt
+# tải và cài model dịch Anh -> Việt một lần
+./.venv/bin/python scripts/install_translation_model.py
 ```
 
 Trong `backend/.env`, đặt:
@@ -111,9 +113,10 @@ bình thường vì không phụ thuộc Resona.
 - Cắt video dùng `-c copy` (không re-encode) nên ranh giới đoạn có thể lệch vài trăm ms
   theo keyframe gần nhất, không chính xác tuyệt đối 4:00.
 - Mỗi đoạn được Whisper tự nhận diện ngôn ngữ; phụ đề/ngữ liệu voice được dịch sang tiếng Việt
-  bằng `deep-translator` (Google Translate) nếu ngôn ngữ nguồn không phải tiếng Việt. Cài thư viện
-  bằng `pip install -r backend/requirements.txt`. Dịch cần Internet và có thể bị giới hạn bởi
-  Google Translate. SRT toàn video cộng timestamp theo vị trí đoạn.
+  bằng Argos Translate chạy local. Cài thư viện bằng `pip install -r backend/requirements.txt`
+  và tải model Anh–Việt một lần bằng `python backend/scripts/install_translation_model.py`.
+  Bước tải model cần Internet; sau đó dịch không gọi Google Translate hay API bên ngoài.
+  SRT toàn video cộng timestamp theo vị trí đoạn.
 - Resona request timeout mặc định là 120 giây (`RESONA_REQUEST_TIMEOUT_MS` trong `backend/.env`),
   để các lần gửi văn bản dài không bị ngắt ở mốc 30 giây.
 - Ghép video: nhạc nền gốc được giữ lại ở volume thấp (25%) làm nền, giọng mới làm chủ đạo;
