@@ -74,7 +74,9 @@ export function startTranscribeWorker() {
   const worker = new Worker(
     "transcribe-segment",
     async (job) => handleTranscribeSegment(job),
-    { connection: createRedisConnection(), concurrency: 1, ...workerLockOptions }
+    // Process two chunks at a time; each chunk is only marked transcribed after
+    // its translation has completed, so downstream TTS sees translated text.
+    { connection: createRedisConnection(), concurrency: 2, ...workerLockOptions }
   );
   worker.on("failed", async (job, err) => {
     console.error(`[transcribe-worker] job ${job?.id} failed:`, err.message);

@@ -410,7 +410,7 @@ export default function JobDetailPage() {
             <button
               className="btn btn-warning btn-sm"
               onClick={handleBulkGenerate}
-              disabled={bulkSubmitting || Boolean(autoRunStage)}
+              disabled={bulkSubmitting || Boolean(autoRunStage) || !allTranscribed}
             >
               {bulkSubmitting ? "Đang gửi…" : `Chỉ tạo giọng (${pendingVoiceCount} đoạn)`}
             </button>
@@ -430,8 +430,11 @@ export default function JobDetailPage() {
           {!bulkVoiceId && (
             <div className="text-warning small mt-2">⚠ Chọn một giọng nói ở trên trước.</div>
           )}
+          {!allTranscribed && (
+            <div className="text-muted small mt-2">Đang nhận diện và dịch các đoạn; tạo voice sẽ mở khi tất cả hoàn tất.</div>
+          )}
           <div className="text-muted small mt-2">
-            Xử lý lần lượt từng đoạn một (không chạy song song) để tránh quá tải Resona.
+            Xử lý tối đa 2 đoạn cùng lúc. Tất cả đoạn sẽ nhận diện và dịch xong trước khi bắt đầu tạo giọng nói.
           </div>
         </div>
       )}
@@ -515,6 +518,7 @@ export default function JobDetailPage() {
               voices={voices}
               defaultOpen={seg.status !== "tts_done"}
               onChanged={kickPoll}
+              canGenerateTts={!isVideoJob || allTranscribed}
             />
           </div>
         ))}

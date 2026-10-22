@@ -21,7 +21,7 @@ function formatSrtTime(seconds) {
   return `${pad(hours)}:${pad(minutes)}:${pad(secs)},${pad(millis, 3)}`;
 }
 
-export default function SegmentCard({ jobId, segment, voices, defaultOpen, onChanged }) {
+export default function SegmentCard({ jobId, segment, voices, defaultOpen, onChanged, canGenerateTts = true }) {
   const [text, setText] = useState(segment.editedText || segment.transcriptText || "");
   const sourceCuesJson = JSON.stringify(segment.cues || []);
   const [cues, setCues] = useState(() => JSON.parse(sourceCuesJson));
@@ -255,7 +255,7 @@ export default function SegmentCard({ jobId, segment, voices, defaultOpen, onCha
                   <button
                     className="btn btn-warning btn-sm"
                     onClick={handleGenerateVoice}
-                    disabled={submitting || isTtsBusy}
+                    disabled={submitting || isTtsBusy || !canGenerateTts}
                   >
                     {isTtsQueued
                       ? "Đang xếp hàng…"
@@ -263,7 +263,7 @@ export default function SegmentCard({ jobId, segment, voices, defaultOpen, onCha
                       ? segment.ttsProgress
                         ? `Đang tạo giọng… (${segment.ttsProgress})`
                         : "Đang tạo giọng…"
-                      : "Tạo giọng nói"}
+                      : canGenerateTts ? "Tạo giọng nói" : "Đợi dịch xong tất cả đoạn"}
                   </button>
                 </div>
                 {!voiceId && (

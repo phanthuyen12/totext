@@ -290,6 +290,14 @@ router.post("/:jobId/segments/:index/tts", async (req, res, next) => {
     console.log(`[jobs] POST tts jobId=${jobId} segment=${index} voiceId=${voiceId} language=${language}`);
     if (!voiceId) return res.status(400).json({ error: "Thiếu field 'voiceId'" });
 
+    const parentJob = await jobStore.getJob(jobId);
+    if (parentJob?.type === "video") {
+      const segments = await jobStore.getAllSegments(jobId);
+      if (segments.some((item) => !["transcribed", "tts_queued", "tts_processing", "tts_done", "tts_failed"].includes(item.status))) {
+        return res.status(409).json({ error: "Đợi dịch và nhận diện xong tất cả các đoạn rồi mới tạo giọng nói" });
+      }
+    }
+
     // guard against duplicate submits (double-click, slow UI refresh, etc.) piling
     // up identical jobs in the queue — reject instead of silently re-enqueueing
     if (segment.status === "tts_queued" || segment.status === "tts_processing") {
@@ -314,6 +322,9 @@ router.post("/:jobId/segments/tts-all", async (req, res, next) => {
     if (!voiceId) return res.status(400).json({ error: "Thiếu field 'voiceId'" });
 
     const segments = await jobStore.getAllSegments(jobId);
+    if (segments.some((seg) => !["transcribed", "tts_queued", "tts_processing", "tts_done", "tts_failed"].includes(seg.status))) {
+      return res.status(409).json({ error: "Đợi dịch và nhận diện xong tất cả các đoạn rồi mới tạo giọng nói" });
+    }
     const pending = segments.filter((s) =>
       ["transcribed", "tts_failed"].includes(s.status)
     );

@@ -9,8 +9,17 @@ import { startAllWorkers } from "./workers/index.js";
 import { startCleanup } from "./services/cleanupService.js";
 
 const app = express();
+// Job state is live data; never let browsers/proxies revalidate a stale job
+// snapshot and turn a polling request into 304 Not Modified.
+app.set("etag", false);
 
 app.use(cors({ origin: config.frontendOrigin }));
+app.use("/api", (req, res, next) => {
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
+  next();
+});
 app.use(express.json());
 
 // Logs every request so we can see from the terminal whether the frontend

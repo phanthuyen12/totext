@@ -214,9 +214,9 @@ export function startTtsWorker() {
   const worker = new Worker(
     "tts-segment",
     async (job) => handleTtsSegment(job),
-    // concurrency 1: process one segment's voice generation at a time so a bulk
-    // "generate all" request doesn't fire everything at Resona concurrently
-    { connection: createRedisConnection(), concurrency: 1, ...workerLockOptions }
+    // Limit Resona load while allowing two translated chunks to generate voice
+    // concurrently.
+    { connection: createRedisConnection(), concurrency: 2, ...workerLockOptions }
   );
   worker.on("failed", async (job, err) => {
     console.error(`[tts-worker] job ${job?.id} failed (attempt ${job?.attemptsMade}/${job?.opts?.attempts}):`, err.message);
