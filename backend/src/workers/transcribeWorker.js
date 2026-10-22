@@ -31,10 +31,13 @@ async function handleTranscribeSegment(job) {
     let translatedSegments = segments;
     if (language && !/^vi(?:[-_]|$)/i.test(language)) {
       try {
-        translatedSegments = await Promise.all(segments.map(async (cue) => ({
+        const translatedTexts = await translationService.translateTextsToVietnamese(
+          segments.map((cue) => cue.text), language
+        );
+        translatedSegments = segments.map((cue, index) => ({
           ...cue,
-          translatedText: await translationService.translateToVietnamese(cue.text, language),
-        })));
+          translatedText: translatedTexts[index],
+        }));
       } catch (err) {
         throw new Error(`Không dịch được phụ đề từ ${language} sang tiếng Việt; chưa thể tạo voice: ${err.message}`);
       }

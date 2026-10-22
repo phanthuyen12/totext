@@ -5,10 +5,11 @@ import { config } from "../config/env.js";
 
 const scriptPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../scripts/translate.py");
 
-/** Translate one subtitle cue to Vietnamese, preserving its timing separately. */
-export async function translateToVietnamese(text, sourceLanguage) {
+/** Translate a segment's cues in one process, paced to avoid Google rate limits. */
+export async function translateTextsToVietnamese(texts, sourceLanguage) {
   const source = String(sourceLanguage || "").split(/[-_]/)[0].toLowerCase();
-  if (!text?.trim() || !source || source === "vi") return text;
+  if (!source || source === "vi") return texts;
+  if (!Array.isArray(texts) || texts.length === 0) return [];
 
   return new Promise((resolve, reject) => {
     const child = spawn(config.translationPython, [scriptPath, source], { stdio: ["pipe", "pipe", "pipe"] });
@@ -22,11 +23,16 @@ export async function translateToVietnamese(text, sourceLanguage) {
         reject(new Error(`Python translation failed${stderr.trim() ? `: ${stderr.trim()}` : ` (exit ${code})`}`));
         return;
       }
-      const translated = stdout.trim();
-      if (!translated) reject(new Error("Translation returned an empty result"));
-      else resolve(translated);
+      try {
+        const translated = JSON.parse(stdout);
+        if (!Array.isArray(translated) || translated.length !== texts.length || translated.some((text) => !text)) {
+          reject(new Error("Translation returned an invalid result"));
+        } else resolve(translated);
+      } catch (err) {
+        reject(new Error(`Could not parse translation result: ${err.message}`));
+      }
     });
     child.stdin.on("error", () => {});
-    child.stdin.end(text);
+    child.stdin.end(JSON.stringify(texts));
   });
 }
