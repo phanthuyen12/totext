@@ -10,7 +10,7 @@ import * as jobStore from "../services/jobStore.js";
 import { splitTextForTts } from "../services/textSplitter.js";
 import { workerLockOptions } from "./workerOptions.js";
 
-const QUALITY_RETRIES = 3;
+const QUALITY_RETRIES = 6;
 
 /** Resona sometimes rejects every take of a chunk ("quality_check_failed"); a fresh request usually passes. */
 async function synthesizeChunk(args) {
@@ -18,7 +18,8 @@ async function synthesizeChunk(args) {
     try {
       return await synthesizeChunkOnce(args);
     } catch (err) {
-      const retryable = /quality_check_failed/.test(err.message);
+      const retryable = /quality[\s_-]*check[\s_-]*failed|pronunciation|none of the generated takes passed/i
+        .test(`${err.code || ""} ${err.message || ""}`);
       if (!retryable || attempt >= QUALITY_RETRIES) throw err;
       console.warn(`[tts-worker] quality check failed, retry ${attempt}/${QUALITY_RETRIES - 1}`);
     }
@@ -63,7 +64,7 @@ function readTranscriptCues(segment) {
 }
 
 async function synthesizeCue({ cue, cueIndex, voiceId, language, cueDir }) {
-  const text = cue.text.trim();
+  const text = String(cue.translatedText || cue.text).trim();
   const cueHash = createHash("sha1").update(`${voiceId}\n${language}\n${text}`).digest("hex");
   const finalCuePath = path.join(cueDir, `cue-${cueHash}.wav`);
   try {
@@ -98,7 +99,11 @@ async function handleTtsSegment(job) {
   const segment = await jobStore.getSegment(jobId, segmentIndex);
   if (!segment) throw new Error(`Segment ${segmentIndex} of job ${jobId} not found`);
 
-  const cues = readTranscriptCues(segment);
+  const cues = readTranscriptCues(segment).map((cue) => ({
+    ...cue,
+    text: cue.translatedText || cue.text,
+  }));
+  const ttsLanguage = cues.some((cue) => cue.translatedText) ? "vi" : language;
   const text = (cues.length
     ? cues.map((cue) => cue.text.trim()).join(" ")
     : segment.editedText || segment.transcriptText || "").trim();
@@ -136,7 +141,7 @@ async function handleTtsSegment(job) {
           cue: cues[i],
           cueIndex: i,
           voiceId,
-          language,
+          language: ttsLanguage,
           cueDir,
         });
         cueAudioPaths.push(generated.filePath);
@@ -168,7 +173,7 @@ async function handleTtsSegment(job) {
       const { filePath, audioUrl, requestId } = await synthesizeChunk({
         text: chunks[i],
         voiceId,
-        language,
+        language: ttsLanguage,
         destPath: path.join(segDir, `tts-chunk-${i}`),
       });
       chunkFiles.push(filePath);

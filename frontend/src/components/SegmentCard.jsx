@@ -26,7 +26,7 @@ export default function SegmentCard({ jobId, segment, voices, defaultOpen, onCha
   const sourceCuesJson = JSON.stringify(segment.cues || []);
   const [cues, setCues] = useState(() => JSON.parse(sourceCuesJson));
   const [voiceId, setVoiceId] = useState(segment.ttsVoiceId || "");
-  const [ttsLanguage, setTtsLanguage] = useState(segment.language === "en" ? "en" : "vi");
+  const [ttsLanguage, setTtsLanguage] = useState("vi");
   const [saving, setSaving] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [retryingTranscript, setRetryingTranscript] = useState(false);

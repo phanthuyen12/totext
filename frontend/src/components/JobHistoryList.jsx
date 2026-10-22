@@ -15,6 +15,8 @@ export default function JobHistoryList({ jobs, loading, emptyHint, onDeleted }) 
   const [selected, setSelected] = useState(new Set());
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
+  const [page, setPage] = useState(1);
+  const pageSize = 5;
 
   if (loading) {
     return (
@@ -28,7 +30,10 @@ export default function JobHistoryList({ jobs, loading, emptyHint, onDeleted }) 
     return <div className="text-center text-secondary py-4">{emptyHint || "Chưa có job nào."}</div>;
   }
 
-  const allSelected = selected.size === jobs.length;
+  const pageCount = Math.ceil(jobs.length / pageSize);
+  const currentPage = Math.min(page, pageCount);
+  const visibleJobs = jobs.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const allSelected = visibleJobs.length > 0 && visibleJobs.every((job) => selected.has(job.id));
 
   function toggle(id) {
     setSelected((prev) => {
@@ -65,9 +70,13 @@ export default function JobHistoryList({ jobs, loading, emptyHint, onDeleted }) 
               type="checkbox"
               className="form-check-input mt-0"
               checked={allSelected}
-              onChange={() => setSelected(allSelected ? new Set() : new Set(jobs.map((j) => j.id)))}
+              onChange={() => setSelected((prev) => {
+                const next = new Set(prev);
+                visibleJobs.forEach(({ id }) => allSelected ? next.delete(id) : next.add(id));
+                return next;
+              })}
             />
-            Chọn tất cả
+            Chọn trang này
           </label>
           <button
             type="button"
@@ -81,7 +90,7 @@ export default function JobHistoryList({ jobs, loading, emptyHint, onDeleted }) 
       )}
       {error && <div className="alert alert-danger py-2 small">{error}</div>}
       <div className="d-flex flex-column gap-2">
-        {jobs.map((job) => (
+        {visibleJobs.map((job) => (
           <div key={job.id} className="d-flex align-items-stretch gap-2">
             {onDeleted && (
               <input
@@ -119,6 +128,24 @@ export default function JobHistoryList({ jobs, loading, emptyHint, onDeleted }) 
           </div>
         ))}
       </div>
+      {pageCount > 1 && (
+        <nav className="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3" aria-label="Phân trang lịch sử">
+          <span className="small text-secondary">
+            Hiển thị {(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, jobs.length)} trong {jobs.length} công việc
+          </span>
+          <div className="btn-group btn-group-sm" role="group" aria-label="Điều hướng trang">
+            <button type="button" className="btn btn-outline-secondary" onClick={() => setPage(currentPage - 1)} disabled={currentPage === 1}>
+              ← Trước
+            </button>
+            <button type="button" className="btn btn-outline-secondary" disabled aria-current="page">
+              Trang {currentPage}/{pageCount}
+            </button>
+            <button type="button" className="btn btn-outline-secondary" onClick={() => setPage(currentPage + 1)} disabled={currentPage === pageCount}>
+              Sau →
+            </button>
+          </div>
+        </nav>
+      )}
     </>
   );
 }

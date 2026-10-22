@@ -6,6 +6,7 @@ import { config } from "../config/env.js";
 import * as ffmpegService from "../services/ffmpegService.js";
 import * as whisperService from "../services/whisperService.js";
 import * as srtService from "../services/srtService.js";
+import * as translationService from "../services/translationService.js";
 import * as jobStore from "../services/jobStore.js";
 import { workerLockOptions } from "./workerOptions.js";
 
@@ -25,8 +26,22 @@ async function handleTranscribeSegment(job) {
     await jobStore.updateSegment(jobId, segmentIndex, { status: "transcribing" });
     const { language, segments } = await whisperService.transcribe(audioPath);
 
-    const transcriptText = srtService.segmentsToPlainText(segments);
-    const srtContent = srtService.segmentsToSrt(segments);
+    // Keep the recognized source text, while using Vietnamese translations for
+    // generated subtitles and dubbing whenever the source is another language.
+    let translatedSegments = segments;
+    if (language && !/^vi(?:[-_]|$)/i.test(language)) {
+      try {
+        translatedSegments = await Promise.all(segments.map(async (cue) => ({
+          ...cue,
+          translatedText: await translationService.translateToVietnamese(cue.text, language),
+        })));
+      } catch (err) {
+        throw new Error(`Không dịch được phụ đề từ ${language} sang tiếng Việt; chưa thể tạo voice: ${err.message}`);
+      }
+    }
+
+    const transcriptText = srtService.segmentsToPlainText(translatedSegments.map((cue) => ({ ...cue, text: cue.translatedText || cue.text })));
+    const srtContent = srtService.segmentsToSrt(translatedSegments.map((cue) => ({ ...cue, text: cue.translatedText || cue.text })));
     const srtPath = path.join(segDir, "subtitle.srt");
     await fs.writeFile(srtPath, srtContent, "utf-8");
 
@@ -34,7 +49,12 @@ async function handleTranscribeSegment(job) {
       audioPath,
       language,
       transcriptText,
-      transcriptCues: JSON.stringify(segments.map(({ start, end, text }) => ({ start, end, text }))),
+      transcriptCues: JSON.stringify(translatedSegments.map(({ start, end, text, translatedText }) => ({
+        start,
+        end,
+        text: translatedText || text,
+        ...(translatedText ? { translatedText, originalText: text } : {}),
+      }))),
       srtPath,
       status: "transcribed",
     });

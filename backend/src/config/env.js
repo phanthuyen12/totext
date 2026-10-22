@@ -12,6 +12,8 @@ export const config = {
   resonaApiBase: process.env.RESONA_API_BASE || "https://resona.live",
   resonaApiKey: process.env.RESONA_API_KEY || "",
   resonaRequestTimeoutMs: Number(process.env.RESONA_REQUEST_TIMEOUT_MS || 120000),
+  translationUrl: process.env.TRANSLATION_URL || "https://translate.argosopentech.com/translate",
+  translationApiKey: process.env.TRANSLATION_API_KEY || "",
 
   segmentSeconds: Number(process.env.SEGMENT_SECONDS || 60),
 
